@@ -28,6 +28,9 @@ export default function Setup() {
   const [sessionName, setSessionName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [inviteUrl, setInviteUrl] = useState(null)
+  const [createdSessionId, setCreatedSessionId] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   function addInvitee() {
     const name = inviteName.trim()
@@ -54,12 +57,86 @@ export default function Setup() {
         budget,
         memberName: yourName.trim(),
       })
-      navigate(`/swipe/${sessionId}`)
+      const url = `${window.location.origin}/join/${sessionId}`
+      setInviteUrl(url)
+      setCreatedSessionId(sessionId)
     } catch (e) {
       setError(e.message || 'Something went wrong')
     } finally {
       setLoading(false)
     }
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  // After session created — show invite link screen
+  if (inviteUrl) {
+    return (
+      <div className="app-shell flex flex-col">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <h1 className="logo text-5xl mb-2">link.</h1>
+          <p className="text-gray-400 text-sm mb-10">Session created!</p>
+
+          <div className="w-full bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-6">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"
+              style={{ background: '#F0EEFF' }}
+            >
+              🔗
+            </div>
+            <h2 className="grotesk text-xl font-bold text-gray-800 mb-1">Invite your friends</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              Share this link so they can join and swipe together
+            </p>
+
+            {/* URL display */}
+            <div
+              className="flex items-center gap-2 p-3 rounded-2xl mb-3"
+              style={{ background: '#F8F7FF' }}
+            >
+              <p className="flex-1 text-xs text-gray-500 truncate text-left">{inviteUrl}</p>
+              <button
+                onClick={copyLink}
+                className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all"
+                style={{ background: copied ? '#22C55E' : '#534AB7' }}
+              >
+                {copied ? 'Copied ✓' : 'Copy'}
+              </button>
+            </div>
+
+            {/* Share button (native share sheet on mobile) */}
+            {typeof navigator.share === 'function' && (
+              <button
+                onClick={() => navigator.share({ title: "Join my link. session", url: inviteUrl })}
+                className="w-full py-2.5 rounded-2xl text-sm font-semibold border-2 transition-colors"
+                style={{ borderColor: '#534AB7', color: '#534AB7' }}
+              >
+                Share via...
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs text-gray-400 mb-6">
+            Friends who open this link will be asked for their name, then dropped straight into the swipe screen.
+          </p>
+        </div>
+
+        <div className="px-5 pb-8 pt-3 border-t border-gray-100">
+          <button
+            onClick={() => navigate(`/swipe/${createdSessionId}`)}
+            className="w-full py-4 rounded-2xl text-white font-bold grotesk"
+            style={{ background: '#534AB7' }}
+          >
+            Start swiping →
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -167,7 +244,7 @@ export default function Setup() {
         {/* Invite friends */}
         <div className="mb-6">
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Invite friends
+            Who's coming?
           </label>
           <div className="flex gap-2">
             <input
@@ -208,7 +285,7 @@ export default function Setup() {
           )}
 
           <p className="text-xs text-gray-400 mt-2">
-            They'll join via a shareable link after you start
+            You'll get a shareable link after you start
           </p>
         </div>
 
